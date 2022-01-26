@@ -1,0 +1,891 @@
+
+import tkinter as tk
+from tkinter.font import Font
+import math
+import matplotlib.pyplot as plt
+import numpy as np
+
+root = tk.Tk()
+root.title('Rocket Calculator')
+
+fields = ('ENTER force in grams', 'ENTER initial rocket mass in grams',
+          'ENTER final rocket mass in grams', 'ENTER motor burn time in seconds')
+fields2 = ('ENTER force in grams', 'ENTER initial rocket mass in grams',
+           'ENTER final rocket mass in grams', 'ENTER motor burn time in seconds', 'ENTER Mass of Parachute in grams',
+           'ENTER Radius of Parachute in cm',)
+fields3 = ('ENTER first stages force in grams',
+           'ENTER initial rocket mass in grams', 'ENTER rocket mass after first burnout in grams',
+           'ENTER first stages motor burn time in seconds', 'ENTER time delay for second ignition after burnout',
+           'ENTER second stages force in grams',
+           'ENTER final rocket mass in grams', 'ENTER second stages motor burn time in seconds')
+fields4 = ('ENTER first stages force in grams',
+           'ENTER initial rocket mass in grams', 'ENTER rocket mass after first burnout in grams',
+           'ENTER first stages motor burn time in seconds', 'ENTER time delay for second ignition after burnout',
+           'ENTER second stages force in grams',
+           'ENTER final rocket mass in grams', 'ENTER second stages motor burn time in seconds',
+           'ENTER Mass of Parachute in grams', 'ENTER Radius of Parachute in cm')
+
+# Define Font
+Big_Font = Font(family='Helvetica', size=15, weight='bold', underline=True,)
+button_font = Font(family='Helvetica', size=11)
+subtitle_font = Font(family='Helvetica', size=12, weight='bold', underline=True)
+input_font = Font(family='Helvetica', size=11)
+list_font = Font(family='Helvetica', size=11)
+
+Title_Label = tk.Label(root, text='Rocket Calculator and Graphing', font=Big_Font)
+Title_Label.pack()
+
+
+def clicked1():
+
+    row = tk.Frame(root)
+    row.pack(side=tk.TOP, fill=tk.X)
+    sub_label = tk.Label(row, text='Rocket With Parachute Calculations'
+                                   + ' (Enter Data in ENTER fields)', font=subtitle_font)
+    sub_label.pack(side=tk.LEFT)
+
+    row_a = tk.Frame(root)
+    row_a.pack(side=tk.TOP, fill=tk.X)
+
+    entries1 = {}
+    for field in fields2:
+        print(field)
+        row3 = tk.Frame(row_a)
+        lab = tk.Label(row3, width=30, text=field + ": ", font=input_font, anchor='w')
+        ent = tk.Entry(row3)
+        ent.insert(0, "0")
+        row3.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        lab.pack(side=tk.LEFT)
+        ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+        entries1[field] = ent
+
+    row_c = tk.Frame(root)
+    row_c.pack(fill=tk.BOTH, expand=True)
+
+    scrollbar = tk.Scrollbar(row_c, orient=tk.VERTICAL)
+
+    display_box = tk.Listbox(row_c, yscrollcommand=scrollbar.set)
+    display_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT, padx=5, pady=5)
+    display_box.config(font=list_font)
+
+    scrollbar.config(command=display_box.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def calculate1():
+
+        mass_parachute = float(entries1['ENTER Mass of Parachute in grams'].get())
+        parachute_radius = (float(entries1['ENTER Radius of Parachute in cm'].get())) / 100
+        thrust = (float(entries1['ENTER force in grams'].get()) * 0.009807)
+        initial_rocket_mass = (((float(entries1['ENTER initial rocket mass in grams'].get())) + mass_parachute) / 1000)
+        final_rocket_mass = (((float(entries1['ENTER final rocket mass in grams'].get())) + mass_parachute) / 1000)
+        burn_time = (float(entries1['ENTER motor burn time in seconds'].get()))
+        mass_flow_rate = float((initial_rocket_mass - final_rocket_mass) / burn_time)
+        drag_coefficient = float(1.75)
+        air_density = float(1.229)
+
+        # Variable Calculations
+        parachute_area = float(math.pi * (parachute_radius ** 2))
+        earth_gravity = float(9.81)
+        weight = float(final_rocket_mass * earth_gravity)
+        average_weight = float(((initial_rocket_mass + final_rocket_mass) / 2) * earth_gravity)
+        change_in_mass = float(initial_rocket_mass / final_rocket_mass)
+        exhaust_velocity = float(thrust / mass_flow_rate)
+        mach_speed = float(exhaust_velocity / 343)
+        isp = float(exhaust_velocity / earth_gravity)
+        delta_v = float(earth_gravity * isp * float(math.log(change_in_mass)))
+        acceleration_t0 = float(thrust / (initial_rocket_mass * earth_gravity))
+        average_acceleration = float(thrust / average_weight)
+        max_gs = float((thrust / (final_rocket_mass * 9.81)) / 9.81)
+
+        # Flight Calculations
+        approx_distance_traveled_while_motor_burning = float(0.5 * (thrust / ((initial_rocket_mass -
+                                                                               (mass_flow_rate * burn_time))
+                                                                              * earth_gravity)) * (burn_time ** 2))
+        speed_at_x_seconds = float((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time))
+                                              * earth_gravity)) * burn_time)
+        approx_distance_traveled_after_motor_shut_down = float((speed_at_x_seconds ** 2) / (2 * 9.81))
+        apogee = float(approx_distance_traveled_while_motor_burning + approx_distance_traveled_after_motor_shut_down)
+        apogee_time = float((((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity))
+                              * burn_time) / 9.81) + burn_time)
+        coasting_time = float(((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity))
+                              * burn_time) / 9.81)
+        descent_velocity = float(math.sqrt((2 * weight) / (parachute_area * drag_coefficient * air_density)))
+        descent_time = float(apogee / descent_velocity)
+        flight_time = float(descent_time + apogee_time)
+        time_under_gravity = float(descent_velocity / earth_gravity)
+
+        # Display Results
+        calc_list = [f"Exhaust Velocity = {str(exhaust_velocity)} meters/second",
+                     f"Mach of Exhaust Gas = {str(mach_speed)} meters/second",
+                     f"ISP of Motor = {str(isp)} Newton*Seconds/Kilogram",
+                     f"Delta V of Rocket = {str(delta_v)} meters/second",
+                     f"Acceleration at Liftoff = {str(acceleration_t0)} meters/second/second",
+                     f"Average Acceleration = " + str(average_acceleration) + " meters/second/second",
+                     f"Max G's Experienced During Flight = {str(max_gs)} G's",
+                     f"Distance Travelled While Motor Burning = {str(approx_distance_traveled_while_motor_burning)} "
+                     f"meters",
+                     f"Velocity at Motor Shutdown (Max Velocity) = {str(speed_at_x_seconds)} meters/second",
+                     f"Distance Travelled After Motor Shutdown = {str(approx_distance_traveled_after_motor_shut_down)} "
+                     f"meters",
+                     f"Coasting Time to Apogee = {str(coasting_time)} seconds", f"Apogee = {str(apogee)} meters",
+                     f"Time From Liftoff to Apogee = {str(apogee_time)} seconds",
+                     f"Area of parachute = {str(parachute_area)} meters cubed",
+                     f"Descent Velocity With Parachute = {str(descent_velocity)} meters/second",
+                     f"Time Accelerating to Get to Descent Velocity = {str(time_under_gravity)} seconds",
+                     f"Descent Time = {str(descent_time)} seconds", f"Flight Time = {str(flight_time)} seconds"]
+
+        display_box.insert(tk.END, '\u0332'.join('Results:'))
+
+        for item in calc_list:
+            display_box.insert(tk.END, item)
+
+        display_box.insert(tk.END, '                                                                                  ')
+
+        # Graph Flight Data
+        x = np.linspace(0, burn_time)
+        y = 0.5 * (thrust / ((initial_rocket_mass - (mass_flow_rate * x)) * earth_gravity)) * (x ** 2)
+        plt.plot(x, y, label="Motor Burning")
+
+        x2 = np.linspace(burn_time, apogee_time)
+        y2 = (0.5 * (thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) * (
+                    burn_time ** 2)) + (
+                             ((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) *
+                              burn_time) * (x2 - burn_time)) + (0.5 * -9.81 * ((x2 - burn_time) ** 2))
+        plt.plot(x2, y2, label="Coasting Phase")
+
+        x3 = np.linspace(apogee_time, (apogee_time + time_under_gravity))
+        y3 = apogee + (0.5 * -9.81 * ((x3 - apogee_time) ** 2))
+        plt.plot(x3, y3, label="Descent Under Gravity")
+
+        x4 = np.linspace((apogee_time + time_under_gravity), flight_time)
+        y4 = (apogee + (0.5 * -9.81 * (time_under_gravity ** 2))) - (descent_velocity * (x4 - (apogee_time
+                                                                                               + time_under_gravity)))
+        plt.plot(x4, y4, label="Descent Under Parachute")
+
+        plt.title("Rocket Height Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Height In Meters")
+        plt.legend()
+        plt.show()
+
+        # Acceleration Graph
+        x7 = np.linspace(0, burn_time)
+        y7 = thrust / ((initial_rocket_mass - (mass_flow_rate * x7)) * earth_gravity)
+        plt.plot(x7, y7, label="Acceleration of Rocket")
+
+        plt.title("Rocket Acceleration Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Acceleration In m/s/s")
+        plt.legend()
+        plt.show()
+
+        # Velocity Over Time Graph
+        x5 = np.linspace(0, burn_time)
+        y5 = ((thrust / ((initial_rocket_mass - (mass_flow_rate * x5)) * earth_gravity)) * x5)
+        plt.plot(x5, y5, label="Velocity While Motor Burning")
+
+        x6 = np.linspace(burn_time, (apogee_time + time_under_gravity))
+        y6 = ((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) *
+              burn_time) + (-9.81 * (x6 - burn_time))
+        plt.plot(x6, y6, label="Velocity After Burnout")
+
+        x8 = np.linspace((apogee_time + time_under_gravity), flight_time)
+        y8 = - descent_velocity * ((x8 * 0) + 1)
+        plt.plot(x8, y8, label="Velocity Under Parachute",)
+
+        plt.title("Rocket Velocity Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Velocity In m/s")
+        plt.legend()
+        plt.show()
+
+    row_b = tk.Frame(root)
+    row_b.pack(fill=tk.X)
+
+    def clear1():
+        for widget in row_a.winfo_children():
+            widget.destroy()
+        row_a.destroy()
+        row.destroy()
+        row_b.destroy()
+        row_c.destroy()
+
+    b6 = tk.Button(row_b, text='Quit', command=root.quit, height=2, width=8)
+    b6.pack(side=tk.RIGHT, padx=5, pady=5)
+    b7 = tk.Button(row_b, text='Clear Page', command=clear1, height=2, width=8)
+    b7.pack(side=tk.RIGHT, padx=5, pady=5)
+    b5 = tk.Button(row_b, text='Calculate', command=calculate1, height=2, width=8)
+    b5.pack(side=tk.RIGHT, padx=5, pady=5)
+
+    return entries1
+
+
+def clicked2():
+
+    row = tk.Frame(root)
+    row.pack(side=tk.TOP, fill=tk.X)
+    sub_label = tk.Label(row, text='Rocket With Two Stages Calculations'
+                                   + ' (Enter Data in ENTER fields)', font=subtitle_font)
+    sub_label.pack(side=tk.LEFT)
+
+    row_a = tk.Frame(root)
+    row_a.pack(side=tk.TOP, fill=tk.X)
+
+    entries2 = {}
+    for field in fields3:
+        print(field)
+        row4 = tk.Frame(row_a)
+        lab = tk.Label(row4, width=40, text=field + ": ", font=input_font, anchor='w')
+        ent = tk.Entry(row4)
+        ent.insert(0, "0")
+        row4.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
+        lab.pack(side=tk.LEFT)
+        ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+        entries2[field] = ent
+
+    row_c = tk.Frame(root)
+    row_c.pack(fill=tk.BOTH, expand=True)
+
+    scrollbar = tk.Scrollbar(row_c, orient=tk.VERTICAL)
+
+    display_box = tk.Listbox(row_c, yscrollcommand=scrollbar.set)
+    display_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT, padx=5, pady=5)
+    display_box.config(font=list_font)
+
+    scrollbar.config(command=display_box.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def calculate2():
+        # Get inputs
+        thrust1 = float(float(entries2['ENTER first stages force in grams'].get()) * 0.009807)
+        initial_rocket_mass = float(float(entries2['ENTER initial rocket mass in grams'].get()) / 1000)
+        burnout1_rocket_mass = float(float(entries2['ENTER rocket mass after first burnout in grams'].get()) / 1000)
+        burn_time1 = float(float(entries2['ENTER first stages motor burn time in seconds'].get()))
+        ignition_delay = float(float(entries2['ENTER time delay for second ignition after burnout'].get()))
+        thrust2 = float(float(entries2['ENTER second stages force in grams'].get()) * 0.009807)
+        burn_time2 = float(float(entries2['ENTER second stages motor burn time in seconds'].get()))
+        final_rocket_mass = float(float(entries2['ENTER final rocket mass in grams'].get()) / 1000)
+        mass_flow_rate1 = float((initial_rocket_mass - burnout1_rocket_mass) / burn_time1)
+        mass_flow_rate2 = float((burnout1_rocket_mass - final_rocket_mass) / burn_time2)
+
+        # Calculate Variables
+        earth_gravity = float(9.81)
+        average_weight1 = float(((initial_rocket_mass + burnout1_rocket_mass) / 2) * earth_gravity)
+        average_weight2 = float(((burnout1_rocket_mass + final_rocket_mass) / 2) * earth_gravity)
+        change_in_mass1 = float(initial_rocket_mass / burnout1_rocket_mass)
+        change_in_mass2 = float(burnout1_rocket_mass / final_rocket_mass)
+        exhaust_velocity1 = float(thrust1 / mass_flow_rate1)
+        mach_speed1 = float(exhaust_velocity1 / 343)
+        exhaust_velocity2 = float(thrust2 / mass_flow_rate2)
+        mach_speed2 = float(exhaust_velocity2 / 343)
+        isp1 = float(exhaust_velocity1 / earth_gravity)
+        isp2 = float(exhaust_velocity2 / earth_gravity)
+        delta_v = float((earth_gravity * isp1 * float(math.log(change_in_mass1))) + (
+                earth_gravity * isp2 * float(math.log(change_in_mass2))))
+        acceleration_t0 = float(thrust1 / (initial_rocket_mass * earth_gravity))
+        acceleration_t02 = float(thrust2 / (burnout1_rocket_mass * earth_gravity))
+        average_acceleration1 = float(thrust1 / average_weight1)
+        average_acceleration2 = float(thrust2 / average_weight2)
+        max_gs1 = float((thrust1 / (burnout1_rocket_mass * earth_gravity)) / earth_gravity)
+        max_gs2 = float((thrust2 / (final_rocket_mass * earth_gravity)) / earth_gravity)
+
+        # Flight Data Calculations
+        distance_traveled_while_motor1_burning = float(0.5 * (
+                thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * burn_time1)) * earth_gravity)) * (burn_time1 ** 2))
+        speed_at_x_seconds1 = float((thrust1 / ((initial_rocket_mass - (mass_flow_rate1
+                                                                        * burn_time1)) * earth_gravity)) * burn_time1)
+        coasting_distance1 = float((speed_at_x_seconds1 * ignition_delay) + (0.5 * -9.81 * (ignition_delay ** 2)))
+        distance_traveled_while_motor2_burning = float(((speed_at_x_seconds1 + (-9.81 * ignition_delay)) * burn_time2)
+                                                       + (0.5 * (thrust2 / ((burnout1_rocket_mass
+                                                                             - (mass_flow_rate2 * burn_time2))
+                                                                            * earth_gravity)) * (burn_time2 ** 2)))
+        speed_at_x_seconds2 = float((speed_at_x_seconds1 + (-9.81 * ignition_delay)) + (
+                (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * burn_time2)) * earth_gravity)) * burn_time2))
+        coasting_distance2 = float((speed_at_x_seconds2 ** 2) / (2 * 9.81))
+        apogee = float(distance_traveled_while_motor1_burning + coasting_distance1
+                       + distance_traveled_while_motor2_burning + coasting_distance2)
+        second_ignition = float(burn_time1 + ignition_delay)
+        second_motor_shutdown = float(second_ignition + burn_time2)
+        coasting_time_apogee = float(speed_at_x_seconds2 / 9.81)
+        apogee_time = float(second_motor_shutdown + (speed_at_x_seconds2 / 9.81))
+        descent_time = float(math.sqrt(apogee / (0.5 * 9.81)))
+        flight_time = float(descent_time + apogee_time)
+
+        # Display Results
+        calc_list = [f"Exhaust Velocity of First Stage = {str(exhaust_velocity1)} meters/second",
+                     f"Exhaust Velocity of Second Stage = {str(exhaust_velocity2)} meters/second",
+                     f"Mach of First Stage Exhaust Gas = {str(mach_speed1)} meters/second",
+                     f"Mach of Second Stage Exhaust Gas = {str(mach_speed2)} meters/second",
+                     f"ISP of First Stage Motor = {str(isp1)} Newton*Seconds/Kilogram",
+                     f"ISP of Second Stage Motor = {str(isp2)} Newton*Seconds/Kilogram",
+                     f"Delta V of Rocket = {str(delta_v)} meters/second",
+                     f"Acceleration at Liftoff = {str(acceleration_t0)} meters/second/second",
+                     f"Acceleration at Second Motor Ignition = {str(acceleration_t02)} meters/second/second",
+                     f"Average Acceleration of First Stage = {str(average_acceleration1) } meters/second/second",
+                     f"Average Acceleration of Second Stage = {str(average_acceleration2)} meters/second/second",
+                     f"Max G's Experienced During First Stage Burn = {str(max_gs1)} G's",
+                     f"Max G's Experienced During Second Stage Burn = {str(max_gs2)} G's",
+                     f"Distance Travelled While First Stage Burning = {str(distance_traveled_while_motor1_burning)} "
+                     f"meters",
+                     f"Velocity at First Stage Motor Shutdown = {str(speed_at_x_seconds1)} meters/second",
+                     f"Distance Travelled During Ignition Delay = {str(coasting_distance1)} meters",
+                     f"Distance Traveled While Second Stage Burning = {str(distance_traveled_while_motor2_burning)} "
+                     f"meters",
+                     f"Velocity at Second Stage Motor Shutdown (Max Velocity) = {str(speed_at_x_seconds2)} "
+                     f"meters/second",
+                     f"Distance Travelled After Second Stage Shutdown = {str(coasting_distance2)} meters",
+                     f"Coasting Time to Apogee = {str(coasting_time_apogee)} seconds", f"Apogee = {str(apogee)} meters",
+                     f"Time From Liftoff to Apogee = {str(apogee_time)} seconds",
+                     f"Descent Time = {str(descent_time)} seconds", f"Flight Time = {str(flight_time)} seconds"]
+
+        display_box.insert(tk.END, '\u0332'.join('Results:'))
+
+        for item in calc_list:
+            display_box.insert(tk.END, item)
+
+        display_box.insert(tk.END, '                                                                                  ')
+
+        # Flight Graph
+        x = np.linspace(0, burn_time1)
+        y = 0.5 * (thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x)) * earth_gravity)) * (x ** 2)
+        plt.plot(x, y, label="First Stage Burn")
+
+        x2 = np.linspace(burn_time1, second_ignition)
+        y2 = distance_traveled_while_motor1_burning + (
+                             ((thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * burn_time1)) * earth_gravity)) *
+                              burn_time1) * (x2 - burn_time1)) + (0.5 * -9.81 * ((x2 - burn_time1) ** 2))
+        plt.plot(x2, y2, label="Ignition Delay Coasting")
+
+        x3 = np.linspace(second_ignition, second_motor_shutdown)
+        y3 = (distance_traveled_while_motor1_burning + coasting_distance1) + (
+                (speed_at_x_seconds1 + (-9.81 * ignition_delay)) * (x3 - second_ignition)) + (
+                0.5 * (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x3 - second_ignition))) * earth_gravity))
+                * ((x3 - second_ignition) ** 2))
+        plt.plot(x3, y3, label="Second Stage Burn")
+
+        x4 = np.linspace(second_motor_shutdown, flight_time)
+        y4 = ((distance_traveled_while_motor1_burning + coasting_distance1 + distance_traveled_while_motor2_burning)
+              + (speed_at_x_seconds2 * (x4 - second_motor_shutdown)) + (0.5 * -9.81 * ((x4 - second_motor_shutdown)
+                                                                                       ** 2)))
+        plt.plot(x4, y4, label="Coast to Apogee and Descent")
+
+        plt.title("Rocket Height Over Time")
+        plt.xlabel("Time in Seconds")
+        plt.ylabel("Height in Meters")
+        plt.legend()
+        plt.show()
+
+        # Acceleration Graph
+        x9 = np.linspace(0, burn_time1)
+        y9 = thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x9)) * earth_gravity)
+        plt.plot(x9, y9, label="First Stage Burning")
+
+        x10 = np.linspace(burn_time1, second_ignition)
+        y10 = -9.81 * ((x10 * 0) + 1)
+        plt.plot(x10, y10, label="First Coasting Phase")
+
+        x11 = np.linspace(second_ignition, second_motor_shutdown)
+        y11 = thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x11 - second_ignition))) * earth_gravity)
+        plt.plot(x11, y11, label="Second Stage Burning")
+
+        plt.title("Rocket Acceleration Over Time")
+        plt.xlabel("Time in Seconds")
+        plt.ylabel("Acceleration in m/s/s")
+        plt.legend()
+        plt.show()
+
+        # Velocity Over Time
+        x5 = np.linspace(0, burn_time1)
+        y5 = ((thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x5)) * earth_gravity)) * x5)
+        plt.plot(x5, y5, label="Velocity While First Stage Burning")
+
+        x6 = np.linspace(burn_time1, second_ignition)
+        y6 = speed_at_x_seconds1 + (-9.81 * (x6 - burn_time1))
+        plt.plot(x6, y6, label="Velocity While Waiting for Second Ignition")
+
+        x7 = np.linspace(second_ignition, second_motor_shutdown)
+        y7 = (speed_at_x_seconds1 + (-9.81 * ignition_delay)) + (
+                (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x7 - second_ignition))) * earth_gravity))
+                * (x7 - second_ignition))
+        plt.plot(x7, y7, label="Velocity While Second Stage Burning")
+
+        x8 = np.linspace(second_motor_shutdown, flight_time)
+        y8 = (speed_at_x_seconds2 + (-9.81 * (x8 - second_motor_shutdown)))
+        plt.plot(x8, y8, label="Velocity While Coasting and Descent")
+
+        plt.title("Rocket Velocity Over Time")
+        plt.xlabel("Time in Seconds")
+        plt.ylabel("Velocity in m/s")
+        plt.legend()
+        plt.show()
+
+    # Clear Page
+    row_b = tk.Frame(root)
+    row_b.pack(fill=tk.X)
+
+    def clear1():
+        for widget in row_a.winfo_children():
+            widget.destroy()
+        row_a.destroy()
+        row.destroy()
+        row_b.destroy()
+        row_c.destroy()
+
+    b7 = tk.Button(row_b, text='Quit', command=root.quit, height=2, width=8)
+    b7.pack(side=tk.RIGHT, padx=5, pady=5)
+    b7 = tk.Button(row_b, text='Clear Page', command=clear1, height=2, width=8)
+    b7.pack(side=tk.RIGHT, padx=5, pady=5)
+    b6 = tk.Button(row_b, text='Calculate', command=calculate2, height=2, width=8)
+    b6.pack(side=tk.RIGHT, padx=5, pady=5)
+
+    return entries2
+
+
+def clicked3():
+
+    row = tk.Frame(root)
+    row.pack(side=tk.TOP, fill=tk.X)
+    sub_label = tk.Label(row, text='Rocket With Two Stages a Parachute Calculations'
+                                   + ' (Enter Data in ENTER fields)', font=subtitle_font)
+    sub_label.pack(side=tk.LEFT)
+
+    row_a = tk.Frame(root)
+    row_a.pack(side=tk.TOP, fill=tk.X)
+
+    # Creating Calculation Display and Scrollbar plus configure
+    row_c = tk.Frame(root)
+    row_c.pack(fill=tk.BOTH, expand=True)
+
+    scrollbar = tk.Scrollbar(row_c, orient=tk.VERTICAL)
+
+    display_box = tk.Listbox(row_c, yscrollcommand=scrollbar.set)
+    display_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT, padx=5, pady=5)
+    display_box.config(font=list_font)
+
+    scrollbar.config(command=display_box.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # Creating Input Display
+    entries3 = {}
+    for field in fields4:
+        print(field)
+        row5 = tk.Frame(row_a)
+        lab = tk.Label(row5, width=40, text=field + ": ", font=input_font, anchor='w')
+        ent = tk.Entry(row5)
+        ent.insert(0, "0")
+        row5.pack(side=tk.TOP, fill=tk.X, padx=3, pady=3)
+        lab.pack(side=tk.LEFT)
+        ent.pack(side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+        entries3[field] = ent
+
+        def calculate3():
+
+            mass_parachute = float(entries3['ENTER Mass of Parachute in grams'].get())
+            thrust1 = float(float(entries3['ENTER first stages force in grams'].get()) * 0.009807)
+            initial_rocket_mass = float((float(entries3['ENTER initial rocket mass in grams'].get()) +
+                                         mass_parachute) / 1000)
+            burnout1_rocket_mass = float(
+                    (float(entries3['ENTER rocket mass after first burnout in grams'].get()) + mass_parachute) / 1000)
+            burn_time1 = float(float(entries3['ENTER first stages motor burn time in seconds'].get()))
+            ignition_delay = float(float(entries3['ENTER time delay for second ignition after burnout'].get()))
+            thrust2 = float(float(entries3['ENTER second stages force in grams'].get()) * 0.009807)
+            burn_time2 = float(float(entries3['ENTER second stages motor burn time in seconds'].get()))
+            final_rocket_mass = float((float(entries3['ENTER final rocket mass in grams'].get()) + mass_parachute)
+                                      / 1000)
+            parachute_radius = (float(entries3['ENTER Radius of Parachute in cm'].get())) / 100
+            mass_flow_rate1 = float((initial_rocket_mass - burnout1_rocket_mass) / burn_time1)
+            mass_flow_rate2 = float((burnout1_rocket_mass - final_rocket_mass) / burn_time2)
+            drag_coefficient = float(1.75)
+            air_density = float(1.229)
+
+            # Calculate Variables
+            earth_gravity = float(9.81)
+            average_weight1 = float(((initial_rocket_mass + burnout1_rocket_mass) / 2) * earth_gravity)
+            average_weight2 = float(((burnout1_rocket_mass + final_rocket_mass) / 2) * earth_gravity)
+            change_in_mass1 = float(initial_rocket_mass / burnout1_rocket_mass)
+            change_in_mass2 = float(burnout1_rocket_mass / final_rocket_mass)
+            exhaust_velocity1 = float(thrust1 / mass_flow_rate1)
+            mach_speed1 = float(exhaust_velocity1 / 343)
+            exhaust_velocity2 = float(thrust2 / mass_flow_rate2)
+            mach_speed2 = float(exhaust_velocity2 / 343)
+            isp1 = float(exhaust_velocity1 / earth_gravity)
+            isp2 = float(exhaust_velocity2 / earth_gravity)
+            delta_v = float((earth_gravity * isp1 * float(math.log(change_in_mass1))) +
+                            (earth_gravity * isp2 * float(math.log(change_in_mass2))))
+            acceleration_t0 = float(thrust1 / (initial_rocket_mass * earth_gravity))
+            acceleration_t02 = float(thrust2 / (burnout1_rocket_mass * earth_gravity))
+            average_acceleration1 = float(thrust1 / average_weight1)
+            average_acceleration2 = float(thrust2 / average_weight2)
+            max_gs1 = float((thrust1 / (burnout1_rocket_mass * earth_gravity)) / earth_gravity)
+            max_gs2 = float((thrust2 / (final_rocket_mass * earth_gravity)) / earth_gravity)
+            parachute_area = float(math.pi * (parachute_radius ** 2))
+            weight = float(final_rocket_mass * earth_gravity)
+
+            # Calculate Flight Data
+            distance_traveled_while_motor1_burn = float(0.5 * (thrust1 / (
+                    (initial_rocket_mass - (mass_flow_rate1 * burn_time1)) * earth_gravity)) * (burn_time1 ** 2))
+            speed_at_x_seconds1 = float((thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * burn_time1)) *
+                                                    earth_gravity)) * burn_time1)
+            coasting_distance1 = float((speed_at_x_seconds1 * ignition_delay)
+                                       + (0.5 * -9.81 * (ignition_delay ** 2)))
+            distance_traveled_while_motor2_burn = float(
+                ((speed_at_x_seconds1 + (-9.81 * ignition_delay)) * burn_time2) + (
+                        0.5 * (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * burn_time2)) * earth_gravity))
+                        * (burn_time2 ** 2)))
+            speed_at_x_seconds2 = float(
+                (speed_at_x_seconds1 + (-9.81 * ignition_delay)) + (
+                        (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * burn_time2)) * earth_gravity))
+                        * burn_time2))
+            coasting_distance2 = float((speed_at_x_seconds2 ** 2) / (2 * 9.81))
+            apogee = float(distance_traveled_while_motor1_burn + coasting_distance1 +
+                           distance_traveled_while_motor2_burn + coasting_distance2)
+            second_ignition = float(burn_time1 + ignition_delay)
+            second_motor_shutdown = float(second_ignition + burn_time2)
+            apogee_time = float(second_motor_shutdown + (speed_at_x_seconds2 / 9.81))
+            coasting_time_apogee = float(speed_at_x_seconds2 / earth_gravity)
+            descent_velocity = float(math.sqrt((2 * weight) / (parachute_area * drag_coefficient * air_density)))
+            descent_time = float(apogee / descent_velocity)
+            flight_time = float(descent_time + apogee_time)
+            time_under_gravity = float(descent_velocity / earth_gravity)
+            time_accelerating_gravity = float(apogee_time + time_under_gravity)
+
+            # Display Results
+            calc_list = [f"Exhaust Velocity of First Stage = {str(exhaust_velocity1)} meters/second",
+                         f"Exhaust Velocity of Second Stage = {str(exhaust_velocity2)} meters/second",
+                         f"Mach of First Stage Exhaust Gas = {str(mach_speed1)} meters/second",
+                         f"Mach of Second Stage Exhaust Gas = {str(mach_speed2)} meters/second",
+                         f"ISP of First Stage Motor = {str(isp1)} Newton*Seconds/Kilogram",
+                         f"ISP of Second Stage Motor = {str(isp2)} Newton*Seconds/Kilogram",
+                         f"Delta V of Rocket = {str(delta_v)} meters/second",
+                         f"Acceleration at Liftoff = {str(acceleration_t0)} meters/second/second",
+                         f"Acceleration at Second Motor Ignition = {str(acceleration_t02)} meters/second/second",
+                         f"Average Acceleration of First Stage = {str(average_acceleration1)} meters/second/second",
+                         f"Average Acceleration of Second Stage = {str(average_acceleration2)} meters/second/second",
+                         f"Max G's Experienced During First Stage Burn = {str(max_gs1)} G's",
+                         f"Max G's Experienced During Second Stage Burn = {str(max_gs2)} G's",
+                         f"Distance Travelled While First Stage Burning = {str(distance_traveled_while_motor1_burn)} "
+                         f"meters",
+                         f"Velocity at First Stage Motor Shutdown = {str(speed_at_x_seconds1)} meters/second",
+                         f"Distance Travelled During Ignition Delay = {str(coasting_distance1)} meters",
+                         f"Distance Traveled While Second Stage Burning = {str(distance_traveled_while_motor2_burn)} "
+                         f"meters",
+                         f"Velocity at Second Stage Motor Shutdown (Max Velocity) = {str(speed_at_x_seconds2)} "
+                         f"meters/second",
+                         f"Distance Travelled After Second Stage Shutdown = {str(coasting_distance2)} meters",
+                         f"Coasting Time to Apogee = {str(coasting_time_apogee)} seconds",
+                         f"Apogee = {str(apogee)} meters",
+                         f"Time From Liftoff to Apogee = {str(apogee_time)} seconds",
+                         f"Area of parachute = {str(parachute_area)} meters cubed",
+                         f"Descent Velocity With Parachute = {str(descent_velocity)} meters/second",
+                         f"Time Accelerating to Get to Descent Velocity = {str(time_under_gravity)} seconds",
+                         f"Descent Time = {str(descent_time)} seconds", f"Flight Time = {str(flight_time)} seconds"]
+
+            display_box.insert(tk.END, '\u0332'.join('Results:'))
+
+            for item in calc_list:
+                display_box.insert(tk.END, item)
+
+            display_box.insert(tk.END, '                                                                             ')
+
+            # FLight Graph
+            x = np.linspace(0, burn_time1)
+            y = 0.5 * (thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x)) * earth_gravity)) * (x ** 2)
+            plt.plot(x, y, label="First Stage Burn")
+
+            x2 = np.linspace(burn_time1, second_ignition)
+            y2 = distance_traveled_while_motor1_burn + (
+                        ((thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * burn_time1)) * earth_gravity)) *
+                         burn_time1) * (x2 - burn_time1)) + (0.5 * -9.81 * ((x2 - burn_time1) ** 2))
+            plt.plot(x2, y2, label="Ignition Delay Coasting")
+
+            x3 = np.linspace(second_ignition, second_motor_shutdown)
+            y3 = (distance_traveled_while_motor1_burn + coasting_distance1) + (
+                    (speed_at_x_seconds1 + (-9.81 * ignition_delay)) * (x3 - second_ignition)) + (
+                    0.5 * (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x3 - second_ignition))) *
+                                      earth_gravity)) * ((x3 - second_ignition) ** 2))
+            plt.plot(x3, y3, label="Second Stage Burn")
+
+            x4 = np.linspace(second_motor_shutdown, apogee_time)
+            y4 = ((distance_traveled_while_motor1_burn + coasting_distance1 + distance_traveled_while_motor2_burn)
+                  + (speed_at_x_seconds2 * (x4 - second_motor_shutdown)) + (0.5 * -9.81 * ((x4 - second_motor_shutdown)
+                                                                                           ** 2)))
+            plt.plot(x4, y4, label="Coast to Apogee")
+
+            x5 = np.linspace(apogee_time, time_accelerating_gravity)
+            y5 = apogee + (0.5 * -9.81 * ((x5 - apogee_time) ** 2))
+            plt.plot(x5, y5, label="Descent Under Gravity")
+
+            x6 = np.linspace(time_accelerating_gravity, flight_time)
+            y6 = (apogee + (0.5 * -9.81 * (time_under_gravity ** 2))) - (descent_velocity * (x6 -
+                                                                                             time_accelerating_gravity))
+            plt.plot(x6, y6, label="Descent under Parachute")
+
+            plt.title("Rocket Height Over Time")
+            plt.xlabel("Time in Seconds")
+            plt.ylabel("Height in Meters")
+            plt.legend()
+            plt.show()
+
+            # Acceleration Graph
+            x7 = np.linspace(0, burn_time1)
+            y7 = thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x7)) * earth_gravity)
+            plt.plot(x7, y7, label="First Stage Burning")
+
+            x8 = np.linspace(burn_time1, second_ignition)
+            y8 = -9.81 * ((x8 * 0) + 1)
+            plt.plot(x8, y8, label="First Coasting Phase")
+
+            x9 = np.linspace(second_ignition, second_motor_shutdown)
+            y9 = thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x9 - second_ignition))) * earth_gravity)
+            plt.plot(x9, y9, label="Second Stage Burning")
+
+            x10 = np.linspace(second_motor_shutdown, time_accelerating_gravity)
+            y10 = -9.81 * ((x10 * 0) + 1)
+            plt.plot(x10, y10, label="Second Coasting Phase")
+
+            plt.title("Rocket Acceleration Over Time")
+            plt.xlabel("Time in Seconds")
+            plt.ylabel("Acceleration in m/s/s")
+            plt.legend()
+            plt.show()
+
+            # Velocity Over Time Graph
+            x11 = np.linspace(0, burn_time1)
+            y11 = ((thrust1 / ((initial_rocket_mass - (mass_flow_rate1 * x11)) * earth_gravity)) * x11)
+            plt.plot(x11, y11, label="First Stage Burn")
+
+            x12 = np.linspace(burn_time1, second_ignition)
+            y12 = speed_at_x_seconds1 + (-9.81 * (x12 - burn_time1))
+            plt.plot(x12, y12, label="Coast Phase One")
+
+            x13 = np.linspace(second_ignition, second_motor_shutdown)
+            y13 = (speed_at_x_seconds1 + (-9.81 * ignition_delay)) + (
+                    (thrust2 / ((burnout1_rocket_mass - (mass_flow_rate2 * (x13 - second_ignition))) *
+                                earth_gravity)) * (x13 - second_ignition))
+            plt.plot(x13, y13, label="Second Stage Burn")
+
+            x14 = np.linspace(second_motor_shutdown, time_accelerating_gravity)
+            y14 = speed_at_x_seconds2 + (-9.81 * (x14 - second_motor_shutdown))
+            plt.plot(x14, y14, label="Coast Phase Two")
+
+            x15 = np.linspace(time_accelerating_gravity, flight_time)
+            y15 = -descent_velocity * ((x15 * 0) + 1)
+            plt.plot(x15, y15, label="Under Parachute")
+
+            plt.title("Rocket Velocity Over Time")
+            plt.xlabel("Time in Seconds")
+            plt.ylabel("Velocity in m/s")
+            plt.legend()
+            plt.show()
+
+    # Clear Page
+    row_b = tk.Frame(root)
+    row_b.pack(fill=tk.X)
+
+    def clear1():
+        for widget in row_a.winfo_children():
+            widget.destroy()
+        row_a.destroy()
+        row.destroy()
+        row_b.destroy()
+        row_c.destroy()
+
+    b7 = tk.Button(row_b, text='Quit', command=root.quit, height=2, width=8)
+    b7.pack(side=tk.RIGHT, padx=5, pady=5)
+    b8 = tk.Button(row_b, text='Clear Page', command=clear1, height=2, width=8)
+    b8.pack(side=tk.RIGHT, padx=5, pady=5)
+    b6 = tk.Button(row_b, text='Calculate', command=calculate3, height=2, width=8)
+    b6.pack(side=tk.RIGHT, padx=5, pady=5)
+
+    return entries3
+
+
+def clicked4():
+
+    row_c = tk.Frame(root)
+    row_c.pack(side=tk.TOP, fill=tk.X)
+    sub_label = tk.Label(row_c, text='Rocket With One Stage' + ' (Enter Data in ENTER fields)', font=subtitle_font)
+    sub_label.pack(side=tk.LEFT)
+
+    row_a = tk.Frame(root)
+    row_a.pack(side=tk.TOP, fill=tk.X)
+
+    entries = {}
+    for field in fields:
+        print(field)
+        row = tk.Frame(row_a)
+        lab = tk.Label(row, width=30, text=field + ": ", font=input_font, anchor='w')
+        ent = tk.Entry(row)
+        ent.insert(0, "0")
+        row.pack(side=tk.TOP,
+                 fill=tk.X,
+                 padx=5,
+                 pady=5)
+        lab.pack(side=tk.LEFT)
+        ent.pack(side=tk.LEFT,
+                 expand=tk.YES,
+                 fill=tk.X)
+        entries[field] = ent
+
+    row_d = tk.Frame(root)
+    row_d.pack(fill=tk.BOTH, expand=True)
+
+    scrollbar = tk.Scrollbar(row_d, orient=tk.VERTICAL)
+
+    display_box = tk.Listbox(row_d, yscrollcommand=scrollbar.set)
+    display_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT, padx=5, pady=5)
+    display_box.config(font=list_font)
+
+    scrollbar.config(command=display_box.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def calculate4():
+
+        # conversions:
+        thrust = (float(entries['ENTER force in grams'].get()) * 0.009807)
+        initial_rocket_mass = (float(entries['ENTER initial rocket mass in grams'].get()) / 1000)
+        final_rocket_mass = (float(entries['ENTER final rocket mass in grams'].get()) / 1000)
+        motor_burn_time = (float(entries['ENTER motor burn time in seconds'].get()))
+        mass_flow_rate = float((initial_rocket_mass - final_rocket_mass) / motor_burn_time)
+
+        # Variables for further calculations
+        earth_gravity = float(9.81)
+        weight = float(initial_rocket_mass * earth_gravity)
+        average_weight = float(((initial_rocket_mass + final_rocket_mass) / 2) * earth_gravity)
+        change_in_mass = float(initial_rocket_mass / final_rocket_mass)
+
+        # Calculations
+        exhaust_velocity = float(thrust / mass_flow_rate)
+        mach_speed = float(exhaust_velocity / 343)
+        isp = float(exhaust_velocity / earth_gravity)
+        delta_v = float(earth_gravity * isp * float(math.log(change_in_mass)))
+        acceleration_t0 = float(thrust / weight)
+        average_acceleration = float(thrust / average_weight)
+        max_gs = float((thrust / (final_rocket_mass * 9.81)) / 9.81)
+
+        # Flight Calculations
+        burn_time = motor_burn_time
+        approx_distance_traveled_while_motor_burning = float(0.5 * (thrust / ((initial_rocket_mass
+                                                                               - (mass_flow_rate * burn_time)) *
+                                                                              earth_gravity)) * (burn_time ** 2))
+        speed_at_x_seconds = float((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time))
+                                              * earth_gravity)) * burn_time)
+        approx_distance_traveled_after_motor_shut_down = float((speed_at_x_seconds ** 2) / (2 * 9.81))
+        apogee = float(approx_distance_traveled_while_motor_burning + approx_distance_traveled_after_motor_shut_down)
+        apogee_time = float((((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity))
+                              * burn_time) / 9.81) + burn_time)
+        coasting_time_apogee = float(((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity))
+                                      * burn_time) / 9.81)
+        descent_time = float(math.sqrt(apogee / (0.5 * 9.81)))
+        flight_time = descent_time + apogee_time
+
+        # Display Results
+        calc_list = [f"Exhaust Velocity = {str(exhaust_velocity)} meters/second",
+                     f"Mach of Exhaust Gas = {str(mach_speed)} meters/second",
+                     f"ISP of Motor = {str(isp)} Newton*Seconds/Kilogram",
+                     f"Delta V of Rocket = {str(delta_v)} meters/second",
+                     f"Acceleration at Liftoff = {str(acceleration_t0)} meters/second/second",
+                     f"Average Acceleration = " + str(average_acceleration) + " meters/second/second",
+                     f"Max G's Experienced During Flight = {str(max_gs)} G's",
+                     f"Distance Travelled While Motor Burning = {str(approx_distance_traveled_while_motor_burning)} "
+                     f"meters",
+                     f"Velocity at Motor Shutdown (Max Velocity) = {str(speed_at_x_seconds)} meters/second",
+                     f"Distance Travelled After Motor Shutdown = {str(approx_distance_traveled_after_motor_shut_down)} "
+                     f"meters",
+                     f"Coasting Time to Apogee = {str(coasting_time_apogee)} seconds", f"Apogee = {str(apogee)} meters",
+                     f"Time From Liftoff to Apogee = {str(apogee_time)} seconds",
+                     f"Descent Time = {str(descent_time)} seconds", f"Flight Time = {str(flight_time)} seconds"]
+
+        display_box.insert(tk.END, '\u0332'.join('Results:'))
+
+        for item in calc_list:
+            display_box.insert(tk.END, item)
+
+        display_box.insert(tk.END, '                                                                                  ')
+
+        # Graph Flight Data
+        x = np.linspace(0, burn_time)
+        y = 0.5 * (thrust / ((initial_rocket_mass - (mass_flow_rate * x)) * earth_gravity)) * (x ** 2)
+        plt.plot(x, y, label="Motor Burning")
+
+        x2 = np.linspace(burn_time, apogee_time)
+        y2 = (0.5 * (thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) * (
+                burn_time ** 2)) + (((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) *
+                                     burn_time) * (x2 - burn_time)) + (0.5 * -9.81 * ((x2 - burn_time) ** 2))
+        plt.plot(x2, y2, label="Coasting Phase")
+
+        x3 = np.linspace(apogee_time, flight_time)
+        y3 = apogee + (0.5 * -9.81 * ((x3 - apogee_time) ** 2))
+        plt.plot(x3, y3, label="Descent Phase")
+
+        plt.title("Rocket Height Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Height In Meters")
+        plt.legend()
+        plt.show()
+
+        # Acceleration Graph
+        x4 = np.linspace(0, burn_time)
+        y4 = thrust / ((initial_rocket_mass - (mass_flow_rate * x4)) * earth_gravity)
+        plt.plot(x4, y4, label="Acceleration of Rocket")
+
+        plt.title("Rocket Acceleration Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Acceleration In m/s/s")
+        plt.legend()
+        plt.show()
+
+        # Velocity Over Time Graph
+        x5 = np.linspace(0, burn_time)
+        y5 = ((thrust / ((initial_rocket_mass - (mass_flow_rate * x5)) * earth_gravity)) * x5)
+        plt.plot(x5, y5, label="Velocity While Motor Burning")
+
+        x6 = np.linspace(burn_time, flight_time)
+        y6 = ((thrust / ((initial_rocket_mass - (mass_flow_rate * burn_time)) * earth_gravity)) *
+              burn_time) + (-9.81 * (x6 - burn_time))
+        plt.plot(x6, y6, label="Velocity After Burnout")
+
+        plt.title("Rocket Velocity Over Time")
+        plt.xlabel("Time In Seconds")
+        plt.ylabel("Velocity In m/s")
+        plt.legend()
+        plt.show()
+
+    # Clear Page
+    row_b = tk.Frame(root)
+    row_b.pack(fill=tk.X)
+
+    def clear1():
+        for widget in row_a.winfo_children():
+            widget.destroy()
+        row_a.destroy()
+        row_c.destroy()
+        row_b.destroy()
+        row_d.destroy()
+
+    b7 = tk.Button(row_b, text='Quit', command=root.quit, height=2, width=8)
+    b7.pack(side=tk.RIGHT, padx=5, pady=5)
+    b8 = tk.Button(row_b, text='Clear Page', command=clear1, height=2, width=8)
+    b8.pack(side=tk.RIGHT, padx=5, pady=5)
+    b6 = tk.Button(row_b, text='Calculate', command=calculate4, height=2, width=8)
+    b6.pack(side=tk.RIGHT, padx=5, pady=5)
+
+    return entries
+
+
+if __name__ == '__main__':
+    row2 = tk.Frame(root)
+    space1 = tk.Label(row2, text='                                                                                    '
+                                 '                              ')
+    space1.pack(side=tk.LEFT)
+    r = tk.IntVar()
+    tk.Radiobutton(row2, text='Single Stage Rocket', variable=r, font=button_font, value=0,
+                   command=clicked4).pack(side=tk.LEFT)
+    tk.Radiobutton(row2, text='Single Stage Rocket with Parachute', font=button_font, variable=r, value=1,
+                   command=clicked1).pack(side=tk.LEFT)
+    tk.Radiobutton(row2, text='Two Stage Rocket', font=button_font, variable=r, value=2,
+                   command=clicked2).pack(side=tk.LEFT)
+    tk.Radiobutton(row2, text='Two Stage Rocket with Parachute', font=button_font, variable=r, value=3,
+                   command=clicked3).pack(side=tk.LEFT)
+    row2.pack(side=tk.TOP, fill=tk.X, padx=3, pady=3)
+    tk.mainloop()
